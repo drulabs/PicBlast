@@ -1,0 +1,49 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    
+    repositories {
+        maven { url "http://objectbox.net/beta-repo/" }
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.0'
+
+        classpath "io.objectbox:objectbox-gradle-plugin:1.0.1"
+        // Better IDE support for annotations (so Android Studio interacts better with Dagger)
+        // classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url "http://objectbox.net/beta-repo/" }
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+// Define versions in a single place
+ext {
+    // Sdk and tools
+    minSdkVersion = 21
+    targetSdkVersion = 26
+    compileSdkVersion = 26
+    buildToolsVersion = '26.0.0'
+    // App dependencies
+    supportLibVersion = "26.0.0"
+    picassoVersion = '2.5.2'
+    retrofitVersion = '2.3.0'
+    makermanRoundedImageVersion = '2.3.0'
+    gsonVersion = '2.8.0'
+    junitVersion = '4.12'
+    daggerVersion = '2.11'
+    objectboxVersion = '1.0.1'
+}

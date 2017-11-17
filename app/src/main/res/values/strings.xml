@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Pic Blast</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="imgur_access_denies">Access denied</string>
+    <string name="imgur_login_text">Imgur</string>
+    <string name="flickr_login_text">flickr</string>
+    <string name="facebook_login_text">facebook</string>
+</resources>
