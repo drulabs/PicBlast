@@ -1,13 +1,13 @@
 package org.drulabs.picblast.data;
 
-import org.drulabs.picblast.data.models.ImgurAlbum;
-import org.drulabs.picblast.data.models.ImgurUserAlbums;
+import org.drulabs.picblast.data.models.ImgurResp;
 import org.drulabs.picblast.data.models.PixyAlbum;
+import org.drulabs.picblast.data.models.PixyPic;
 
 import java.util.List;
 
 import io.reactivex.Observable;
-import retrofit2.Call;
+import io.reactivex.Single;
 
 /**
  * Created by kaushald.
@@ -32,13 +32,20 @@ public interface DataHandler {
 
     double getDouble(String key);
 
-    void fetchAlbums(Callback<List<ImgurAlbum>> callback);
+    Observable<List<PixyAlbum>> fetchAlbums();
 
-    Observable<List<PixyAlbum>> fetchAlbums(boolean fromCache);
+    Observable<PixyAlbum> fetchAlbums(String searchText);
 
-    void fetchAlbums(boolean fromCache, Callback<List<ImgurAlbum>> callback);
+    Single<Void> createAlbum(String service, String name, String description, String privacy);
 
-    void fetchAlbums(String searchText, Callback<List<ImgurAlbum>> callback);
+    Single<PixyAlbum> getAlbum(String provider, String albumId);
+
+    Single<ImgurResp> uploadImage(String provider, String albumId, String filePath, String title,
+                                  String description, String name);
+
+    void fetchAlbums(Callback<List<PixyAlbum>> callback);
+
+    Observable<List<PixyPic>> getAlbumImages(String provider, String albumId);
 
     interface Callback<T> {
         void onResult(T result);

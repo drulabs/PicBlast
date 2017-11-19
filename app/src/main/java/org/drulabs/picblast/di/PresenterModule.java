@@ -2,6 +2,8 @@ package org.drulabs.picblast.di;
 
 import org.drulabs.picblast.activities.albums.AlbumsContract;
 import org.drulabs.picblast.activities.albums.AlbumsPresenter;
+import org.drulabs.picblast.activities.imgur.AlbumDetailsContract;
+import org.drulabs.picblast.activities.imgur.AlbumDetailsPresenter;
 import org.drulabs.picblast.activities.servicelogin.LoginContract;
 import org.drulabs.picblast.activities.servicelogin.LoginPresenter;
 import org.drulabs.picblast.activities.signin.HomeContract;
@@ -27,6 +29,10 @@ public abstract class PresenterModule {
 
     @Binds
     abstract AlbumsContract.Presenter bindAlbumsPresenter(AlbumsPresenter albumsPresenter);
+
+    @Binds
+    abstract AlbumDetailsContract.Presenter bindAlbumDetailsPresenter(
+            AlbumDetailsPresenter albumDetailsPresenter);
 
     @Binds
     abstract DataHandler bindsDataHandler(AppDataHandler appDataHandler);

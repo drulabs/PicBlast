@@ -1,26 +1,35 @@
 package org.drulabs.picblast.data;
 
+import android.content.Context;
+
 import org.drulabs.picblast.data.models.ImgurAlbum;
+import org.drulabs.picblast.data.models.ImgurAlbumDetails;
+import org.drulabs.picblast.data.models.ImgurPic;
+import org.drulabs.picblast.data.models.ImgurResp;
 import org.drulabs.picblast.data.models.ImgurUserAlbums;
 import org.drulabs.picblast.data.models.ModelAdapter;
 import org.drulabs.picblast.data.models.PixyAlbum;
 import org.drulabs.picblast.data.models.PixyAlbum_;
 import org.drulabs.picblast.data.models.PixyPic;
+import org.drulabs.picblast.data.models.PixyPic_;
 import org.drulabs.picblast.data.network.ImgurApi;
+import org.drulabs.picblast.utils.Constants;
+import org.drulabs.picblast.utils.Utility;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
 import io.objectbox.Box;
+import io.objectbox.query.QueryBuilder;
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Call;
-import retrofit2.Response;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 /**
  * Created by kaushald.
@@ -33,10 +42,12 @@ public class AppDataHandler implements DataHandler {
     private ImgurApi mImgurApi;
     private Box<PixyAlbum> mAlbumBox;
     private Box<PixyPic> mPixBox;
+    private Context mContext;
 
     @Inject
-    public AppDataHandler(PrefsStorage prefsStorage, ImgurApi imgurApi, Box<PixyAlbum> albumBox,
-                          Box<PixyPic> pixBox) {
+    public AppDataHandler(Context context, PrefsStorage prefsStorage, ImgurApi imgurApi,
+                          Box<PixyAlbum> albumBox, Box<PixyPic> pixBox) {
+        this.mContext = context;
         this.mPrefsStorage = prefsStorage;
         this.mImgurApi = imgurApi;
         this.mAlbumBox = albumBox;
@@ -84,40 +95,37 @@ public class AppDataHandler implements DataHandler {
     }
 
     @Override
-    public void fetchAlbums(Callback<List<ImgurAlbum>> callback) {
-        // TODO("Write code to fetch albums from local db");
-    }
+    public Observable<List<PixyAlbum>> fetchAlbums() {
 
-    @Override
-    public Observable<List<PixyAlbum>> fetchAlbums(boolean fromCache) {
-        if (!fromCache) {
+        boolean isNetworkAvailable = Utility.isNetworkAvailable(mContext);
+
+        if (isNetworkAvailable) {
             String authHeader = "Bearer " + mPrefsStorage.getString("imgur-access-token");
             Observable<ImgurUserAlbums> imgurAlbumsObservable = mImgurApi.fetchUserAlbums
                     (authHeader, "me");
-
             return imgurAlbumsObservable
-                    .map(imgurUserAlbums -> imgurUserAlbums.getAlbumList())
+                    .map(ImgurUserAlbums::getAlbumList)
                     .compose(upstream -> upstream.subscribeOn(Schedulers.io())
                             .map(imgurAlbums -> {
                                 List<PixyAlbum> pixyAlbums = new ArrayList<>();
                                 for (ImgurAlbum singleImgurAlbum : imgurAlbums) {
-                                    PixyAlbum soloPixyAlbum = ModelAdapter.fromImgurToPixy
+                                    PixyAlbum soloPixyAlbum = ModelAdapter.from
                                             (singleImgurAlbum);
                                     pixyAlbums.add(soloPixyAlbum);
+                                    mAlbumBox.query().equal(PixyAlbum_.id, singleImgurAlbum.getId())
+                                            .build().remove();
                                 }
-                                mAlbumBox.remove(pixyAlbums);
+
                                 mAlbumBox.put(pixyAlbums);
 
                                 return pixyAlbums;
                             })
-                            .observeOn(AndroidSchedulers.mainThread())
+                            .doOnError(Throwable::printStackTrace)
                     );
         } else {
-            // Read from local db and return
-            return Observable.create((ObservableOnSubscribe<List<PixyAlbum>>) subscriber -> {
+            return Observable.create(subscriber -> {
                 try {
-                    List<PixyAlbum> pixyAlbums = mAlbumBox.query().notNull(PixyAlbum_.id).build()
-                            .find();
+                    List<PixyAlbum> pixyAlbums = mAlbumBox.query().build().find(); // add pagination here if required
                     subscriber.onNext(pixyAlbums);
                     subscriber.onComplete();
                 } catch (Exception e1) {
@@ -129,29 +137,133 @@ public class AppDataHandler implements DataHandler {
     }
 
     @Override
-    public void fetchAlbums(boolean fromCache, final Callback<List<ImgurAlbum>> callback) {
-
-        if (!fromCache) {
-            String authHeader = "Bearer " + mPrefsStorage.getString("imgur-access-token");
-
-            mImgurApi.getUserAlbums(authHeader, "me").enqueue(new retrofit2.Callback<ImgurUserAlbums>() {
-                @Override
-                public void onResponse(Call<ImgurUserAlbums> call, Response<ImgurUserAlbums> response) {
-                    callback.onResult(response.body().getAlbumList());
+    public Observable<PixyAlbum> fetchAlbums(String searchText) {
+        return Observable.create(subscriber -> {
+            try {
+                QueryBuilder<PixyAlbum> albumQry = mAlbumBox.query();
+                albumQry.contains(PixyAlbum_.title, searchText)
+                        .or().contains(PixyAlbum_.description, searchText)
+                        .or().contains(PixyAlbum_.provider, searchText);
+                List<PixyAlbum> pixyAlbums = albumQry.build().find(); // add pagination here if required
+                for (PixyAlbum singlePixyAlbum : pixyAlbums) {
+                    subscriber.onNext(singlePixyAlbum);
                 }
+                subscriber.onComplete();
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                subscriber.onError(e1);
+            }
+        });
+    }
 
-                @Override
-                public void onFailure(Call<ImgurUserAlbums> call, Throwable t) {
-                    callback.onError(call.hashCode(), "Something went wrong");
+    @Override
+    public Observable<List<PixyPic>> getAlbumImages(String provider, String albumId) {
+
+        boolean isNetworkAvailable = Utility.isNetworkAvailable(mContext);
+
+        if (isNetworkAvailable) {
+            String authHeader = "Bearer " + mPrefsStorage.getString("imgur-access-token");
+            Observable<ImgurAlbumDetails> albumDetailsObservable = mImgurApi.getAlbumDetails
+                    (authHeader, albumId);
+            return albumDetailsObservable
+                    .map(ImgurAlbumDetails::getImgurAlbum)
+                    .compose(upstream -> upstream.subscribeOn(Schedulers.io())
+                            .map(imgurAlbum -> {
+                                List<PixyPic> pixyPics = new ArrayList<>();
+                                for (ImgurPic singleImg : imgurAlbum.getAlbumImages()) {
+                                    PixyPic soloPic = ModelAdapter.from(imgurAlbum.getId(),
+                                            singleImg);
+                                    pixyPics.add(soloPic);
+
+                                    mPixBox.query().equal(PixyPic_.id, singleImg.getId())
+                                            .build().remove();
+                                }
+
+                                mPixBox.put(pixyPics);
+
+                                return pixyPics;
+                            })
+                    );
+        } else {
+            return Observable.create(subscriber -> {
+                try {
+                    List<PixyPic> pixyPics = mPixBox.query().equal(PixyPic_.parentId, albumId).build()
+                            .find();
+                    subscriber.onNext(pixyPics);
+                    subscriber.onComplete();
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                    subscriber.onError(e1);
                 }
             });
-        } else {
-            fetchAlbums(callback);
         }
     }
 
     @Override
-    public void fetchAlbums(String searchText, Callback<List<ImgurAlbum>> callback) {
-        // TODO("Write code to search for albums in local db");
+    public void fetchAlbums(Callback<List<PixyAlbum>> callback) {
+
+        boolean isNetworkAvailable = Utility.isNetworkAvailable(mContext);
+
+        if (isNetworkAvailable) {
+            // Fetch data from third party service
+            // Convert into desired format as we don't want to use service specific models
+            // Save it in local database, make sure not to block main thread
+            // return the data via callback
+        } else {
+            // Fetch from local db
+            // Do not block the main thread
+            // return the data via callback
+        }
+
+        callback.onError(0, "Not implemented");
+    }
+
+    @Override
+    public Single<Void> createAlbum(String service, String name, String description, String
+            privacy) {
+        return null;
+    }
+
+    @Override
+    public Single<PixyAlbum> getAlbum(String provider, String albumId) {
+        return Single.create(e -> {
+
+            if (provider == null || provider.isEmpty()) {
+                e.onError(new Exception("Provider cannot be null or empty"));
+                return;
+            }
+
+            if (provider.equalsIgnoreCase(Constants.PROVIDER_IMGUR)) {
+                List<PixyAlbum> pixyAlbums = mAlbumBox.query().equal(PixyAlbum_.id, albumId)
+                        .build().find();
+                if (pixyAlbums != null && pixyAlbums.size() > 0) {
+                    e.onSuccess(pixyAlbums.get(0));
+                }
+            } else {
+                e.onError(new Exception("Invalid provider..."));
+                return;
+            }
+        });
+    }
+
+    @Override
+    public Single<ImgurResp> uploadImage(String provider, String albumId, String filePath, String
+            title, String description, String name) {
+
+        String authHeader = "Bearer " + mPrefsStorage.getString("imgur-access-token");
+
+        File imageFile = new File(filePath);
+        RequestBody reqFile = RequestBody.create(MediaType.parse("image/*"), imageFile);
+        MultipartBody.Part imagePart = MultipartBody.Part.createFormData("image", imageFile
+                .getName(), reqFile);
+
+        RequestBody albumIdPart = RequestBody.create(MediaType.parse("text/plain"), albumId);
+
+        RequestBody titlePart = RequestBody.create(MediaType.parse("text/plain"), title);
+        RequestBody descPart = RequestBody.create(MediaType.parse("text/plain"), description);
+        RequestBody namePart = RequestBody.create(MediaType.parse("text/plain"), name);
+
+        return mImgurApi.uploadImage(authHeader, imagePart, albumIdPart,
+                titlePart, descPart, namePart);
     }
 }

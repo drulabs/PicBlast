@@ -1,6 +1,6 @@
 package org.drulabs.picblast.di;
 
-import org.drulabs.picblast.data.network.ApiBuilder;
+import org.drulabs.picblast.data.network.ImgurApiBuilder;
 import org.drulabs.picblast.data.network.ImgurApi;
 
 import javax.inject.Singleton;
@@ -34,7 +34,7 @@ public class NetworkModule {
 
     @Provides
     ImgurApi providesImgurApi(Converter.Factory converterFactory) {
-        return new ApiBuilder(mBaseURL)
+        return new ImgurApiBuilder(mBaseURL)
                 .addConverterFactory(converterFactory)
                 .build();
     }

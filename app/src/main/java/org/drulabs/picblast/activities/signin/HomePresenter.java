@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import org.drulabs.picblast.data.DataHandler;
 import org.drulabs.picblast.data.models.ImgurAlbum;
+import org.drulabs.picblast.utils.Constants;
 
 import java.util.List;
 
@@ -28,40 +29,49 @@ public class HomePresenter implements HomeContract.Presenter {
 
     @Override
     public void start(Bundle extras) {
-        // Any initialization type of code
+        boolean isLoggedIn = mDataHandler.getBoolean("is-logged-in");
+        if (isLoggedIn) {
+            mView.navigateToHomeAndKillSelf();
+        }
     }
 
     @Override
     public void fetchAlbumsForUser(String username) {
 
-//        if (username.trim().isEmpty()) {
-//            mView.showMessage("Username is empty", true);
-//            return;
-//        }
-
         mView.showLoading();
 
-        mDataHandler.fetchAlbums(true, new DataHandler.Callback<List<ImgurAlbum>>() {
-            @Override
-            public void onResult(List<ImgurAlbum> result) {
-                mView.showResult(result);
-                mView.hideLoading();
-            }
-
-            @Override
-            public void onError(int code, String message) {
-                mView.showMessage(message, true);
-                mView.hideLoading();
-            }
-        });
+//        mDataHandler.fetchAlbums(true, new DataHandler.Callback<List<ImgurAlbum>>() {
+//            @Override
+//            public void onResult(List<ImgurAlbum> result) {
+//                mView.showResult(result);
+//                mView.hideLoading();
+//            }
+//
+//            @Override
+//            public void onError(int code, String message) {
+//                mView.showMessage(message, true);
+//                mView.hideLoading();
+//            }
+//        });
 
     }
 
     @Override
+    public void destroy() {
+        this.mView = null;
+    }
+
+    @Override
     public void handleLoginResult(Bundle extras) {
-        String token = extras.getString("access_token");
-        String expiresIn = extras.getString("expires_in");
-        mDataHandler.saveString("imgur-access-token", token);
-        mDataHandler.saveString("token-expires-in", expiresIn);
+        if (extras != null && extras.containsKey("provider")) {
+            if (Constants.PROVIDER_IMGUR.equalsIgnoreCase(extras.getString("provider"))) {
+                String token = extras.getString("access_token");
+                String expiresIn = extras.getString("expires_in");
+                mDataHandler.saveString("imgur-access-token", token);
+                mDataHandler.saveString("token-expires-in", expiresIn);
+                mDataHandler.saveBoolean("is-logged-in", true);
+                mView.navigateToHomeAndKillSelf();
+            }
+        }
     }
 }

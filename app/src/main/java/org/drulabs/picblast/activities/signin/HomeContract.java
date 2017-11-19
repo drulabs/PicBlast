@@ -33,6 +33,8 @@ public interface HomeContract {
 
         void hideLoading();
 
+        void navigateToHomeAndKillSelf();
+
     }
 
 }

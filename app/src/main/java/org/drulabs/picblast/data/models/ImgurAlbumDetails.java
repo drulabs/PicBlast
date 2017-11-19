@@ -5,12 +5,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
-
-public class ImgurUserAlbums {
+public class ImgurAlbumDetails {
 
     @SerializedName("data")
-    List<ImgurAlbum> albumList;
+    ImgurAlbum imgurAlbum;
 
     @SerializedName("status")
     Long mStatus;
@@ -18,12 +16,12 @@ public class ImgurUserAlbums {
     @SerializedName("success")
     Boolean mSuccess;
 
-    public List<ImgurAlbum> getAlbumList() {
-        return albumList;
+    public ImgurAlbum getImgurAlbum() {
+        return imgurAlbum;
     }
 
-    public void setAlbumList(List<ImgurAlbum> data) {
-        albumList = data;
+    public void setImgurAlbum(ImgurAlbum imgurAlbum) {
+        this.imgurAlbum = imgurAlbum;
     }
 
     public Long getStatus() {

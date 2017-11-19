@@ -2,10 +2,12 @@ package org.drulabs.picblast.di;
 
 import org.drulabs.picblast.activities.albums.AlbumList;
 import org.drulabs.picblast.activities.albums.AlbumsContract;
-import org.drulabs.picblast.activities.signin.HomeContract;
-import org.drulabs.picblast.activities.signin.MainActivity;
+import org.drulabs.picblast.activities.imgur.AlbumDetails;
+import org.drulabs.picblast.activities.imgur.AlbumDetailsContract;
 import org.drulabs.picblast.activities.servicelogin.LoginActivity;
 import org.drulabs.picblast.activities.servicelogin.LoginContract;
+import org.drulabs.picblast.activities.signin.HomeContract;
+import org.drulabs.picblast.activities.signin.MainActivity;
 
 import dagger.Module;
 import dagger.Provides;
@@ -20,6 +22,7 @@ public class ViewModule {
     private MainActivity mainActivity;
     private LoginActivity loginActivity;
     private AlbumList albumList;
+    private AlbumDetails albumDetails;
 
     public ViewModule(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
@@ -31,6 +34,10 @@ public class ViewModule {
 
     public ViewModule(AlbumList albumList) {
         this.albumList = albumList;
+    }
+
+    public ViewModule(AlbumDetails albumDetails) {
+        this.albumDetails = albumDetails;
     }
 
     @Provides
@@ -49,6 +56,12 @@ public class ViewModule {
     @ActivityScope
     AlbumsContract.View providesAlbumList() {
         return albumList;
+    }
+
+    @Provides
+    @ActivityScope
+    AlbumDetailsContract.View providesAlbumDetails() {
+        return albumDetails;
     }
 
 //    @Provides

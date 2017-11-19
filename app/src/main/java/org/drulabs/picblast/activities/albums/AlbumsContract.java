@@ -1,5 +1,7 @@
 package org.drulabs.picblast.activities.albums;
 
+import android.os.Bundle;
+
 import org.drulabs.picblast.activities.BasePresenter;
 import org.drulabs.picblast.activities.BaseView;
 import org.drulabs.picblast.data.models.PixyAlbum;
@@ -23,7 +25,7 @@ public interface AlbumsContract {
 
         void hideLoading();
 
-        void closeApp();
+        void navigateToAlbumDetails(Bundle albumInfo);
 
     }
 

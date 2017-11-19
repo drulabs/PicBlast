@@ -19,6 +19,10 @@ public class PixyPic {
     @SerializedName("id")
     String id;
 
+    @Index
+    @SerializedName("parent_id")
+    String parentId;
+
     @SerializedName("animated")
     Boolean animated;
 
@@ -215,6 +219,14 @@ public class PixyPic {
         this.provider = provider;
     }
 
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
     @Override
     public String toString() {
         Gson gson = (new GsonBuilder()).setExclusionStrategies(new FieldExclusionStrategy())
@@ -222,4 +234,27 @@ public class PixyPic {
         return gson.toJson(this);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PixyPic pixyPic = (PixyPic) o;
+
+        if (!id.equals(pixyPic.id)) return false;
+        if (!providerUrl.equals(pixyPic.providerUrl)) return false;
+        if (!provider.equals(pixyPic.provider)) return false;
+        if (name != null ? !name.equals(pixyPic.name) : pixyPic.name != null) return false;
+        return mimeType != null ? mimeType.equals(pixyPic.mimeType) : pixyPic.mimeType == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + providerUrl.hashCode();
+        result = 31 * result + provider.hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (mimeType != null ? mimeType.hashCode() : 0);
+        return result;
+    }
 }

@@ -14,13 +14,14 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#994FC3F7"
+            android:padding="-5dp"
             android:scaleType="centerCrop"
             android:src="@drawable/app_bg"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#994FC3F7"/>
+            android:background="#554FC3F7"/>
     </FrameLayout>
 
     <RelativeLayout

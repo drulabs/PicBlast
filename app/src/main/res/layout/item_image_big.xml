@@ -8,16 +8,17 @@
 
     <FrameLayout
         android:layout_width="match_parent"
+        android:layout_margin="5dp"
+        android:background="@drawable/top_bottom_grey_gradient"
         android:layout_height="wrap_content">
 
         <ImageView
             android:id="@+id/img_bg_main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:background="@drawable/top_bottom_grey_gradient"
             android:contentDescription="@string/app_name"
             android:scaleType="centerCrop"
+            android:tint="#44000000"
             android:adjustViewBounds="true"
             tools:src="@drawable/monkey_d_luffy_01"/>
 

@@ -3,14 +3,17 @@ package org.drulabs.picblast.activities.albums;
 import android.os.Bundle;
 
 import org.drulabs.picblast.data.DataHandler;
-import org.drulabs.picblast.data.models.ImgurAlbum;
 import org.drulabs.picblast.data.models.PixyAlbum;
-import org.drulabs.picblast.data.network.ImgurApi;
 
 import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
+
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by kaushald on 16/11/17.
@@ -21,10 +24,15 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     private AlbumsContract.View mView;
     private DataHandler mDataHandler;
 
+    private Observable<List<PixyAlbum>> albumObservable;
+    private CompositeDisposable compositeDisposables;
+
     @Inject
-    AlbumsPresenter(AlbumsContract.View view, DataHandler dataHandler){
+    AlbumsPresenter(AlbumsContract.View view, DataHandler dataHandler) {
         this.mView = view;
         this.mDataHandler = dataHandler;
+        this.compositeDisposables = new CompositeDisposable();
+        albumObservable = mDataHandler.fetchAlbums();
     }
 
     @Override
@@ -36,23 +44,29 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     public void fetchAlbumList(String provider, String username, int page, int albumsPerPage,
                                HashMap<String, String> extras) {
 
-        mDataHandler.fetchAlbums(false, new DataHandler.Callback<List<ImgurAlbum>>() {
-            @Override
-            public void onResult(List<ImgurAlbum> result) {
+        mView.showLoading(null);
+        compositeDisposables.add(albumObservable.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(pixyAlbums -> {
+                    mView.onAlbumsFetched(pixyAlbums);
+                    mView.hideLoading();
+                })
+        );
+    }
 
-            }
-
-            @Override
-            public void onError(int code, String message) {
-
-            }
-        });
-
-
+    @Override
+    public void destroy() {
+        compositeDisposables.dispose();
     }
 
     @Override
     public void onAlbumClicked(PixyAlbum album) {
-
+        Bundle albumInfo = new Bundle();
+        albumInfo.putString("album_id", album.getId());
+        albumInfo.putString("cover", album.getCover());
+        albumInfo.putString("provider", album.getProvider());
+        albumInfo.putString("title", album.getTitle());
+        albumInfo.putString("description", album.getDescription());
+        mView.navigateToAlbumDetails(albumInfo);
     }
 }

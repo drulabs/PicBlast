@@ -200,4 +200,28 @@ public class PixyAlbum {
                 .create();
         return gson.toJson(this);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PixyAlbum pixyAlbum = (PixyAlbum) o;
+
+        if (!id.equals(pixyAlbum.id)) return false;
+        if (!accountId.equals(pixyAlbum.accountId)) return false;
+        if (!accountUrl.equals(pixyAlbum.accountUrl)) return false;
+        if (!provider.equals(pixyAlbum.provider)) return false;
+        return providerUrl.equals(pixyAlbum.providerUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + accountId.hashCode();
+        result = 31 * result + accountUrl.hashCode();
+        result = 31 * result + provider.hashCode();
+        result = 31 * result + providerUrl.hashCode();
+        return result;
+    }
 }

@@ -23,9 +23,11 @@ import java.util.List;
 class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
 
     private List<PixyAlbum> albums;
+    private AlbumClickListener mListener;
 
-    AlbumsAdapter() {
-        albums = new ArrayList<>();
+    AlbumsAdapter(AlbumClickListener listener) {
+        this.albums = new ArrayList<>();
+        this.mListener = listener;
     }
 
     @Override
@@ -47,7 +49,14 @@ class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
     }
 
     public void append(List<PixyAlbum> albums) {
+        this.albums.removeAll(albums);
         this.albums.addAll(albums);
+        notifyDataSetChanged();
+    }
+
+    public void append(PixyAlbum album) {
+        this.albums.remove(album);
+        this.albums.add(album);
         notifyDataSetChanged();
     }
 
@@ -77,6 +86,12 @@ class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
             tvAlbumInfo.setText(albumInfo);
 
             tvUploaderInfo.setText(pixyAlbum.getAccountUrl());
+
+            itemView.setOnClickListener(v -> mListener.onAlbumClicked(pixyAlbum));
         }
+    }
+
+    interface AlbumClickListener {
+        void onAlbumClicked(PixyAlbum pixyAlbum);
     }
 }

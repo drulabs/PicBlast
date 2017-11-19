@@ -61,8 +61,6 @@ public class LoginActivity extends AppCompatActivity implements LoginContract.Vi
             }
         });
         webView.loadUrl(loginURL);
-//        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(loginURL));
-//        startActivity(browserIntent);
     }
 
     @Override

@@ -11,4 +11,5 @@ public interface BasePresenter {
 
     void start(Bundle extras);
 
+    void destroy();
 }

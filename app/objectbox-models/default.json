@@ -78,7 +78,7 @@
     },
     {
       "id": "4:3459253871501170410",
-      "lastPropertyId": "36:6227780469450767055",
+      "lastPropertyId": "37:5555446216744530961",
       "name": "PixyPic",
       "properties": [
         {
@@ -158,13 +158,18 @@
         {
           "id": "36:6227780469450767055",
           "name": "width"
+        },
+        {
+          "id": "37:5555446216744530961",
+          "indexId": "8:6118312970900810391",
+          "name": "parentId"
         }
       ],
       "relations": []
     }
   ],
   "lastEntityId": "4:3459253871501170410",
-  "lastIndexId": "7:2290159087994547682",
+  "lastIndexId": "8:6118312970900810391",
   "lastRelationId": "2:878126626531754885",
   "lastSequenceId": "0:0",
   "modelVersion": 4,

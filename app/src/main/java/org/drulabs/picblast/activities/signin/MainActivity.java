@@ -10,11 +10,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.drulabs.picblast.R;
+import org.drulabs.picblast.activities.albums.AlbumList;
 import org.drulabs.picblast.activities.servicelogin.LoginActivity;
 import org.drulabs.picblast.application.AppClass;
 import org.drulabs.picblast.di.DaggerViewComponent;
 import org.drulabs.picblast.di.ViewModule;
 import org.drulabs.picblast.data.models.ImgurAlbum;
+import org.drulabs.picblast.utils.Constants;
 
 import java.util.List;
 
@@ -22,8 +24,15 @@ import javax.inject.Inject;
 
 public class MainActivity extends AppCompatActivity implements HomeContract.View {
 
+    private static final int IMGUR_LOGIN_CODE = 22;
+
+    @SuppressWarnings("unused")
+    private static final int FLICKR_LOGIN_CODE = 33;
+
+    @SuppressWarnings("unused")
+    private static final int FACEBOOK_LOGIN_CODE = 44;
+
     EditText etUsername;
-    //TextView tvResult;
 
     @Inject
     HomeContract.Presenter mPresenter;
@@ -33,12 +42,12 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         etUsername = findViewById(R.id.et_username);
-        //tvResult = findViewById(R.id.tv_result);
+
         DaggerViewComponent.builder()
                 .appComponent(((AppClass) getApplicationContext()).getAppComponent())
                 .viewModule(new ViewModule(this))
                 .build().inject(this);
-        //mPresenter = new HomePresenter(this, this);
+        mPresenter.start(getIntent().getExtras());
     }
 
     public void fetchAlbums(View view) {
@@ -63,17 +72,22 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
     @Override
     public void showLoading() {
         Toast.makeText(this, "Loading", Toast.LENGTH_SHORT).show();
-        // TODO show progress bar
     }
 
     @Override
     public void hideLoading() {
-        // TODO hide progress bar
     }
 
     public void showImgurLogin(View view) {
         Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
-        startActivityForResult(loginIntent, 22);
+        startActivityForResult(loginIntent, IMGUR_LOGIN_CODE);
+    }
+
+    @Override
+    public void navigateToHomeAndKillSelf() {
+        Intent landingIntent = new Intent(MainActivity.this, AlbumList.class);
+        startActivity(landingIntent);
+        MainActivity.this.finish();
     }
 
     @Override
@@ -81,8 +95,9 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
-                case 22:
+                case IMGUR_LOGIN_CODE:
                     Bundle bundleData = data.getExtras();
+                    bundleData.putString("provider", Constants.PROVIDER_IMGUR);
                     String token = bundleData.getString("access_token");
                     String expiresIn = bundleData.getString("expires_in");
                     Log.d("MainActivity", "onActivityResult: " + token
@@ -94,4 +109,6 @@ public class MainActivity extends AppCompatActivity implements HomeContract.View
             }
         }
     }
+
+
 }
