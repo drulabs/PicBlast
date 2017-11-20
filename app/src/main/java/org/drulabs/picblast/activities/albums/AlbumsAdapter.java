@@ -60,6 +60,11 @@ class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
         notifyDataSetChanged();
     }
 
+    public void reset(){
+        this.albums.clear();
+        notifyDataSetChanged();
+    }
+
     class AlbumVH extends RecyclerView.ViewHolder {
 
         ImageView imgCover;

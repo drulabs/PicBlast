@@ -1,10 +1,12 @@
 package org.drulabs.picblast.data.models;
 
+import android.support.annotation.NonNull;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
-public class ImgurPic {
+public class ImgurPic implements Comparable<ImgurPic> {
 
     @SerializedName("id")
     private String mId;
@@ -289,4 +291,11 @@ public class ImgurPic {
     }
 
 
+    @Override
+    public int compareTo(@NonNull ImgurPic o) {
+        if (mDatetime == null) {
+            return 0;
+        }
+        return mDatetime.compareTo(o.getDatetime());
+    }
 }

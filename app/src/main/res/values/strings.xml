@@ -98,4 +98,7 @@
     <string name="action_settings">Settings</string>
     <string name="imgur_add_image">+</string>
     <string name="pick_from_galery_title">Pick an image to upload</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="search_text">Search</string>
+    <string name="search_hint">Album title, descriptio etc...</string>
 </resources>

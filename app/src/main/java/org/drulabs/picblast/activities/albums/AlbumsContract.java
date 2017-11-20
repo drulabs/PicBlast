@@ -23,6 +23,8 @@ public interface AlbumsContract {
 
         void showLoading(String message);
 
+        void clearList();
+
         void hideLoading();
 
         void navigateToAlbumDetails(Bundle albumInfo);
@@ -35,6 +37,8 @@ public interface AlbumsContract {
                             HashMap<String, String> extras);
 
         void onAlbumClicked(PixyAlbum album);
+
+        void filterAlbums(String searchText);
 
     }
 

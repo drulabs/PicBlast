@@ -17,23 +17,26 @@ import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by kaushald on 19/11/17.
+ *
+ * @Author kaushald
  */
 
 public class AlbumDetailsPresenter implements AlbumDetailsContract.Presenter {
 
-    DataHandler mDataHandler;
-    AlbumDetailsContract.View mView;
+    private DataHandler mDataHandler;
+    private AlbumDetailsContract.View mView;
     private Observable<List<PixyPic>> albumPicsObservable;
     private CompositeDisposable compositeDisposables;
 
     private String albumId;
 
     @Inject
-    public AlbumDetailsPresenter(DataHandler dataHandler, AlbumDetailsContract.View view) {
+    AlbumDetailsPresenter(DataHandler dataHandler, AlbumDetailsContract.View view) {
         this.mDataHandler = dataHandler;
         this.mView = view;
         this.compositeDisposables = new CompositeDisposable();
@@ -68,18 +71,23 @@ public class AlbumDetailsPresenter implements AlbumDetailsContract.Presenter {
         mView.showLoading();
         compositeDisposables.add(albumPicsObservable.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnError(Throwable::printStackTrace)
-                .subscribe(pixyPics -> {
-                    mView.onAlbumImagesFetched(pixyPics);
+                .doOnError(throwable -> {
+                    throwable.printStackTrace();
+                    mView.showMessage("Something went wrong...");
                     mView.hideLoading();
                 })
+                .doOnComplete(() -> {
+                    albumPicsObservable.unsubscribeOn(Schedulers.io());
+                    mView.hideLoading();
+                })
+                .subscribe(pixyPics -> mView.onAlbumImagesFetched(pixyPics))
         );
 
     }
 
     @Override
     public void uploadImage(String filePath) {
-        String title = String.valueOf((int) System.currentTimeMillis() / 1000);
+        String title = String.valueOf(System.currentTimeMillis() / 1000);
         Single<ImgurResp> uploadSingle = mDataHandler.uploadImage(Constants.PROVIDER_IMGUR, albumId,
                 filePath, title, "Uploaded from android app " + filePath.length(), title);
         mView.showLoading();
@@ -96,6 +104,7 @@ public class AlbumDetailsPresenter implements AlbumDetailsContract.Presenter {
                         mView.showMessage("Upload successful in - album " + albumId);
                         mView.hideLoading();
                         mView.refresh();
+                        uploadSingle.unsubscribeOn(Schedulers.io());
                     }
 
                     @Override

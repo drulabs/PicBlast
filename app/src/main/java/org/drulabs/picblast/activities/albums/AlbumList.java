@@ -1,11 +1,18 @@
 package org.drulabs.picblast.activities.albums;
 
+import android.app.SearchManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -25,10 +32,13 @@ import javax.inject.Inject;
  */
 
 public class AlbumList extends AppCompatActivity implements AlbumsContract.View, AlbumsAdapter
-        .AlbumClickListener {
+        .AlbumClickListener, SearchView.OnQueryTextListener {
 
+    // UI Elements
     private RecyclerView rvAlbumList;
     private ProgressBar albumListLoader;
+    private Toolbar toolbar;
+
     private AlbumsAdapter albumsAdapter;
 
     @Inject
@@ -38,6 +48,8 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.album_list_layout);
+        toolbar = findViewById(R.id.toolbar_album_list);
+        setSupportActionBar(toolbar);
         initializeUI();
 
         DaggerViewComponent.builder()
@@ -52,6 +64,46 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
         rvAlbumList.setLayoutManager(new LinearLayoutManager(AlbumList.this));
         albumsAdapter = new AlbumsAdapter(this);
         rvAlbumList.setAdapter(albumsAdapter);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_album_list, menu);
+
+        // Associate searchable configuration with the SearchView
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setOnQueryTextListener(this);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                return true;
+            case R.id.action_settings:
+                return true;
+            case R.id.action_search:
+                item.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                    @Override
+                    public boolean onMenuItemActionExpand(MenuItem item) {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onMenuItemActionCollapse(MenuItem item) {
+                        mPresenter.filterAlbums("");
+                        return true;
+                    }
+                });
+                return true;
+            default:
+                return true;
+        }
     }
 
     @Override
@@ -93,7 +145,7 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
 
     @Override
     public void onAlbumUpdated(PixyAlbum album) {
-
+        albumsAdapter.append(album);
     }
 
     @Override
@@ -118,5 +170,24 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     @Override
     public void onAlbumClicked(PixyAlbum pixyAlbum) {
         mPresenter.onAlbumClicked(pixyAlbum);
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        if (!newText.isEmpty()) {
+            albumsAdapter.reset();
+        }
+        mPresenter.filterAlbums(newText);
+        return false;
+    }
+
+    @Override
+    public void clearList() {
+        albumsAdapter.reset();
     }
 }

@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -25,6 +26,7 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     private DataHandler mDataHandler;
 
     private Observable<List<PixyAlbum>> albumObservable;
+    private Observable<PixyAlbum> searchObservable;
     private CompositeDisposable compositeDisposables;
 
     @Inject
@@ -47,11 +49,29 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
         mView.showLoading(null);
         compositeDisposables.add(albumObservable.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(Throwable::printStackTrace)
                 .subscribe(pixyAlbums -> {
                     mView.onAlbumsFetched(pixyAlbums);
                     mView.hideLoading();
                 })
         );
+    }
+
+    @Override
+    public void filterAlbums(String searchText) {
+
+        searchObservable = mDataHandler.fetchAlbums(searchText);
+
+        Disposable d = searchObservable.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(Throwable::printStackTrace)
+                .doOnComplete(() -> {
+                    searchObservable.unsubscribeOn(Schedulers.io());
+                })
+                .doOnNext(pixyAlbum -> mView.onAlbumUpdated(pixyAlbum))
+                .subscribe();
+        compositeDisposables.add(d);
+
     }
 
     @Override

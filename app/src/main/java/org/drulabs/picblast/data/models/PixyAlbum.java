@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+
 import io.objectbox.annotation.Backlink;
 import io.objectbox.annotation.Entity;
 import io.objectbox.annotation.Id;
@@ -11,7 +13,7 @@ import io.objectbox.annotation.Index;
 import io.objectbox.relation.ToMany;
 
 @Entity
-public class PixyAlbum {
+public class PixyAlbum implements Serializable {
 
     @Id
     long oID;

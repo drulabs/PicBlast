@@ -5,10 +5,10 @@ import android.content.Context;
 import org.drulabs.picblast.data.models.ImgurAlbum;
 import org.drulabs.picblast.data.models.ImgurAlbumDetails;
 import org.drulabs.picblast.data.models.ImgurPic;
+import org.drulabs.picblast.data.models.ImgurResp;
 import org.drulabs.picblast.data.models.ImgurUserAlbums;
 import org.drulabs.picblast.data.models.ModelAdapter;
 import org.drulabs.picblast.data.models.PixyAlbum;
-import org.drulabs.picblast.data.models.ImgurResp;
 import org.drulabs.picblast.data.models.PixyAlbum_;
 import org.drulabs.picblast.data.models.PixyPic;
 import org.drulabs.picblast.data.models.PixyPic_;
@@ -18,6 +18,7 @@ import org.drulabs.picblast.utils.Utility;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -108,9 +109,9 @@ public class AppDataHandler implements DataHandler {
                     .compose(upstream -> upstream.subscribeOn(Schedulers.io())
                             .map(imgurAlbums -> {
                                 List<PixyAlbum> pixyAlbums = new ArrayList<>();
+                                Collections.sort(imgurAlbums);
                                 for (ImgurAlbum singleImgurAlbum : imgurAlbums) {
-                                    PixyAlbum soloPixyAlbum = ModelAdapter.from
-                                            (singleImgurAlbum);
+                                    PixyAlbum soloPixyAlbum = ModelAdapter.from(singleImgurAlbum);
                                     pixyAlbums.add(soloPixyAlbum);
                                     mAlbumBox.query().equal(PixyAlbum_.id, singleImgurAlbum.getId())
                                             .build().remove();
@@ -119,8 +120,7 @@ public class AppDataHandler implements DataHandler {
                                 mAlbumBox.put(pixyAlbums);
 
                                 return pixyAlbums;
-                            })
-                            .doOnError(Throwable::printStackTrace)
+                            }).doOnError(Throwable::printStackTrace)
                     );
         } else {
             return Observable.create(subscriber -> {
@@ -170,7 +170,9 @@ public class AppDataHandler implements DataHandler {
                     .compose(upstream -> upstream.subscribeOn(Schedulers.io())
                             .map(imgurAlbum -> {
                                 List<PixyPic> pixyPics = new ArrayList<>();
-                                for (ImgurPic singleImg : imgurAlbum.getAlbumImages()) {
+                                List<ImgurPic> result = imgurAlbum.getAlbumImages();
+                                Collections.sort(result);
+                                for (ImgurPic singleImg : result) {
                                     PixyPic soloPic = ModelAdapter.from(imgurAlbum.getId(),
                                             singleImg);
                                     pixyPics.add(soloPic);
@@ -221,6 +223,7 @@ public class AppDataHandler implements DataHandler {
     @Override
     public Single<Void> createAlbum(String service, String name, String description, String
             privacy) {
+        // Not yet implemented
         return null;
     }
 
@@ -236,12 +239,11 @@ public class AppDataHandler implements DataHandler {
             if (provider.equalsIgnoreCase(Constants.PROVIDER_IMGUR)) {
                 List<PixyAlbum> pixyAlbums = mAlbumBox.query().equal(PixyAlbum_.id, albumId)
                         .build().find();
-                if (pixyAlbums != null && pixyAlbums.size() > 0) {
+                if (pixyAlbums.size() > 0) {
                     e.onSuccess(pixyAlbums.get(0));
                 }
             } else {
                 e.onError(new Exception("Invalid provider..."));
-                return;
             }
         });
     }

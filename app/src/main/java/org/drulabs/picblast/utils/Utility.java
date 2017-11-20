@@ -25,18 +25,18 @@ import java.io.File;
 public class Utility {
 
     public static boolean isNetworkAvailable(Context context) {
-//        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(
-//                Context.CONNECTIVITY_SERVICE);
-//        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-//
-//        if (mWifi.isConnected()) {
-//            return true;
-//        } else {
-//            NetworkInfo mMobileData = connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-//            return mMobileData.isConnected();
-//        }
+        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(
+                Context.CONNECTIVITY_SERVICE);
+        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
-        return isWiFiConnected(context);
+        if (mWifi.isConnected()) {
+            return true;
+        } else {
+            NetworkInfo mMobileData = connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+            return mMobileData.isConnected();
+        }
+
+        //return isWiFiConnected(context);
     }
 
     public static boolean isWiFiConnected(Context context) {
