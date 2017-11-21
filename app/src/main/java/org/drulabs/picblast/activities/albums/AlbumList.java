@@ -15,15 +15,18 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import org.drulabs.picblast.R;
 import org.drulabs.picblast.activities.imgur.AlbumDetails;
 import org.drulabs.picblast.application.AppClass;
 import org.drulabs.picblast.data.models.PixyAlbum;
+import org.drulabs.picblast.data.models.PixyStatsHolder;
 import org.drulabs.picblast.di.DaggerViewComponent;
 import org.drulabs.picblast.di.ViewModule;
 
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -38,6 +41,9 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     private RecyclerView rvAlbumList;
     private ProgressBar albumListLoader;
     private Toolbar toolbar;
+    private TextView tvTotalViews;
+    private TextView tvTotalImages;
+    private MenuItem searchMenuItem;
 
     private AlbumsAdapter albumsAdapter;
 
@@ -59,6 +65,8 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     }
 
     private void initializeUI() {
+        tvTotalViews = findViewById(R.id.album_list_views);
+        tvTotalImages = findViewById(R.id.album_list_image_count);
         albumListLoader = findViewById(R.id.album_list_loader);
         rvAlbumList = findViewById(R.id.rv_albums);
         rvAlbumList.setLayoutManager(new LinearLayoutManager(AlbumList.this));
@@ -88,7 +96,8 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
             case R.id.action_settings:
                 return true;
             case R.id.action_search:
-                item.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                searchMenuItem = item;
+                searchMenuItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
                     @Override
                     public boolean onMenuItemActionExpand(MenuItem item) {
                         return true;
@@ -114,6 +123,9 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     @Override
     protected void onResume() {
         super.onResume();
+        if (searchMenuItem != null) {
+            searchMenuItem.collapseActionView();
+        }
         mPresenter.fetchAlbumList("imgur", "me", 1, 20, null);
     }
 
@@ -150,13 +162,13 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
 
     @Override
     public void showLoading(String message) {
-        rvAlbumList.setVisibility(View.GONE);
+        rvAlbumList.setAlpha(0.3f);
         albumListLoader.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideLoading() {
-        rvAlbumList.setVisibility(View.VISIBLE);
+        rvAlbumList.setAlpha(1.0f);
         albumListLoader.setVisibility(View.GONE);
     }
 
@@ -189,5 +201,11 @@ public class AlbumList extends AppCompatActivity implements AlbumsContract.View,
     @Override
     public void clearList() {
         albumsAdapter.reset();
+    }
+
+    @Override
+    public void updateStats(PixyStatsHolder statsHolder) {
+        tvTotalViews.setText(String.format(Locale.US, "Views: %d", statsHolder.getViews()));
+        tvTotalImages.setText(String.format(Locale.US, "Images: %d", statsHolder.getImageCount()));
     }
 }

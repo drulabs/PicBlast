@@ -21,10 +21,41 @@
 
     </android.support.v7.widget.Toolbar>
 
+    <LinearLayout
+        android:id="@+id/stats_holder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toolbar_album_list"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <TextView
+            android:id="@+id/album_list_views"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:textColor="@color/dark_blue"
+            android:gravity="center_horizontal"
+            android:textSize="20sp"
+            tools:text="Views: 334"/>
+
+        <TextView
+            android:id="@+id/album_list_image_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:textColor="@color/dark_blue"
+            android:gravity="center_horizontal"
+            android:textSize="20sp"
+            tools:text="Images: 53"/>
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/toolbar_album_list"
+        android:layout_below="@+id/stats_holder"
         android:orientation="vertical">
 
         <android.support.v7.widget.RecyclerView

@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -63,10 +64,6 @@ public class AlbumDetails extends AppCompatActivity implements AlbumDetailsContr
         setContentView(R.layout.activity_album_details);
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setHomeAsUpIndicator(R.mipmap.ic_left_arrow);
-        getSupportActionBar().setDisplayShowTitleEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         initializeUI();
 
         DaggerViewComponent.builder()
@@ -95,6 +92,14 @@ public class AlbumDetails extends AppCompatActivity implements AlbumDetailsContr
         rvAlbumPics.setLayoutManager(new LinearLayoutManager(this));
         rvAlbumPics.setAdapter(mAdapter);
         ViewCompat.setNestedScrollingEnabled(rvAlbumPics, false);
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            getSupportActionBar().setHomeAsUpIndicator(R.mipmap.ic_left_arrow);
+            getSupportActionBar().setDisplayShowTitleEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
     }
 
     public void onAddClicked(View view) {
@@ -143,16 +148,9 @@ public class AlbumDetails extends AppCompatActivity implements AlbumDetailsContr
                 case GALLERY_CODE:
                     if (data != null && data.getData() != null) {
                         Uri picUri = data.getData();
-                        //String filePath = Utility.getFilePathFromURI(this, picUri);
-                        String[] projection = {MediaStore.Images.Media.DATA};
-                        Cursor cursor = getContentResolver().query(picUri, projection, null, null, null);
-                        cursor.moveToFirst();
-                        int columnIndex = cursor.getColumnIndex(projection[0]);
-                        String picturePath = cursor.getString(columnIndex);
-
-                        Log.d("AlbumDetails", "onActivityResult: file: " + picturePath);
-                        Log.d("AlbumDetails", "onActivityResult: file: " + picUri);
-                        mPresenter.uploadImage(picturePath);
+                        String filePath = Utility.getFilePathFromURI(this, picUri);
+                        Log.d("AlbumDetails", "onActivityResult: file: " + filePath);
+                        mPresenter.uploadImage(filePath);
                     }
                     break;
                 default:

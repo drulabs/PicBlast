@@ -1,9 +1,12 @@
 package org.drulabs.picblast.activities.albums;
 
 import android.os.Bundle;
+import android.os.Looper;
+import android.util.Log;
 
 import org.drulabs.picblast.data.DataHandler;
 import org.drulabs.picblast.data.models.PixyAlbum;
+import org.drulabs.picblast.data.models.PixyStatsHolder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +26,6 @@ import io.reactivex.schedulers.Schedulers;
 public class AlbumsPresenter implements AlbumsContract.Presenter {
 
     private AlbumsContract.View mView;
-    private DataHandler mDataHandler;
 
     private Observable<List<PixyAlbum>> albumObservable;
     private Observable<PixyAlbum> searchObservable;
@@ -32,9 +34,10 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     @Inject
     AlbumsPresenter(AlbumsContract.View view, DataHandler dataHandler) {
         this.mView = view;
-        this.mDataHandler = dataHandler;
+        DataHandler mDataHandler = dataHandler;
         this.compositeDisposables = new CompositeDisposable();
-        albumObservable = mDataHandler.fetchAlbums();
+        this.albumObservable = mDataHandler.fetchAlbums();
+        this.searchObservable = mDataHandler.fetchAlbums("");
     }
 
     @Override
@@ -48,28 +51,86 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
 
         mView.showLoading(null);
         compositeDisposables.add(albumObservable.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(Throwable::printStackTrace)
-                .subscribe(pixyAlbums -> {
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(pixyAlbums -> {
                     mView.onAlbumsFetched(pixyAlbums);
                     mView.hideLoading();
                 })
+                .subscribe()
+        );
+
+        compositeDisposables.add(
+                searchObservable.subscribeOn(Schedulers.io())
+                        .doOnError(Throwable::printStackTrace)
+                        .doOnComplete(() -> searchObservable.unsubscribeOn(Schedulers.io()))
+                        .map(pixyAlbum -> {
+                            PixyStatsHolder statsHolder = new PixyStatsHolder();
+                            statsHolder.setAlbumId(pixyAlbum.getId());
+                            statsHolder.setImageCount(pixyAlbum.getImagesCount());
+                            statsHolder.setViews(pixyAlbum.getViews());
+                            return statsHolder;
+                        })
+                        .reduce((stats1, stats2) -> {
+                            PixyStatsHolder statsHolder = new PixyStatsHolder();
+                            statsHolder.setAlbumId(stats1.getAlbumId());
+                            statsHolder.setViews(stats1.getViews() + stats2.getViews());
+                            statsHolder.setImageCount(stats1.getImageCount() +
+                                    stats2.getImageCount());
+                            return statsHolder;
+                        })
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(stats -> mView.updateStats(stats))
         );
     }
 
     @Override
     public void filterAlbums(String searchText) {
 
-        searchObservable = mDataHandler.fetchAlbums(searchText);
-
         Disposable d = searchObservable.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(Throwable::printStackTrace)
-                .doOnComplete(() -> {
-                    searchObservable.unsubscribeOn(Schedulers.io());
+                .doOnComplete(() -> searchObservable.unsubscribeOn(Schedulers.io()))
+                .filter(pixyAlbum -> {
+                    Log.d("FilterAlbum", "Filtering: main thread: " + (Looper.myLooper() ==
+                            Looper.getMainLooper()));
+                    return pixyAlbum.getTitle().contains(searchText) ||
+                            pixyAlbum.getDescription().contains(searchText) ||
+                            pixyAlbum.getProvider().contains(searchText);
                 })
-                .doOnNext(pixyAlbum -> mView.onAlbumUpdated(pixyAlbum))
-                .subscribe();
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext(pixyAlbum -> {
+                    mView.onAlbumUpdated(pixyAlbum);
+                    Log.d("FilterAlbum", "UpdateAlbum: main thread: " + (Looper.myLooper() ==
+                            Looper.getMainLooper()));
+                })
+                .observeOn(Schedulers.computation())
+                .map(pixyAlbum -> {
+
+                    Log.d("FilterAlbum", "Mapping: main thread: " + (Looper.myLooper() ==
+                            Looper.getMainLooper()));
+
+                    PixyStatsHolder statsHolder = new PixyStatsHolder();
+                    statsHolder.setAlbumId(pixyAlbum.getId());
+                    statsHolder.setImageCount(pixyAlbum.getImagesCount());
+                    statsHolder.setViews(pixyAlbum.getViews());
+                    return statsHolder;
+                }).reduce((stats1, stats2) -> {
+                    PixyStatsHolder statsHolder = new PixyStatsHolder();
+                    statsHolder.setAlbumId(stats1.getAlbumId());
+                    statsHolder.setViews(stats1.getViews() + stats2.getViews());
+                    statsHolder.setImageCount(stats1.getImageCount() +
+                            stats2.getImageCount());
+
+                    Log.d("FilterAlbum", "Reducing: main thread: " + (Looper.myLooper() ==
+                            Looper.getMainLooper()));
+
+                    return statsHolder;
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(stats -> {
+                    Log.d("FilterAlbum", "UpdateStats: main thread: " + (Looper.myLooper() ==
+                            Looper.getMainLooper()));
+                    mView.updateStats(stats);
+                });
         compositeDisposables.add(d);
 
     }
@@ -77,6 +138,7 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     @Override
     public void destroy() {
         compositeDisposables.dispose();
+        mView = null;
     }
 
     @Override

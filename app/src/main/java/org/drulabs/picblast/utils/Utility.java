@@ -11,12 +11,7 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
 import android.widget.Toast;
-
-import org.drulabs.picblast.BuildConfig;
-
-import java.io.File;
 
 /**
  * Created by kaushald on 17/11/17.
@@ -71,26 +66,24 @@ public class Utility {
     }
 
     public static String getFilePathFromURI(Context context, Uri fileUri) {
-
-        Uri newUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID+".provider",
-                new File(fileUri.toString()));
-        return newUri.toString();
-
-//        try {
-//            Cursor cursor = context.getContentResolver().query(fileUri, new String[]{MediaStore
-//                    .Images.Media.DATA}, null, null, null);
-//            if (cursor.moveToFirst()) {
-//                int columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-//                String filePath = cursor.getString(columnIndex);
-//                cursor.close();
-//                return filePath;
-//            } else {
-//                return null;
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return null;
-//        }
+        Cursor cursor = null;
+        try {
+            String[] projection = {MediaStore.Images.Media.DATA};
+            cursor = context.getContentResolver().query(fileUri, projection, null, null,
+                    null);
+            cursor.moveToFirst();
+            int columnIndex = cursor.getColumnIndex(projection[0]);
+            String picturePath = cursor.getString(columnIndex);
+            if (picturePath == null) {
+                return fileUri.getPath();
+            } else {
+                return picturePath;
+            }
+        } finally {
+            if (cursor != null && !cursor.isClosed()) {
+                cursor.close();
+            }
+        }
     }
 
 }

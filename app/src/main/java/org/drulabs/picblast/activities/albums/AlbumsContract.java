@@ -5,6 +5,7 @@ import android.os.Bundle;
 import org.drulabs.picblast.activities.BasePresenter;
 import org.drulabs.picblast.activities.BaseView;
 import org.drulabs.picblast.data.models.PixyAlbum;
+import org.drulabs.picblast.data.models.PixyStatsHolder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,8 @@ public interface AlbumsContract {
         void showLoading(String message);
 
         void clearList();
+
+        void updateStats(PixyStatsHolder statsHolder);
 
         void hideLoading();
 

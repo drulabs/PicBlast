@@ -15,6 +15,7 @@ import org.drulabs.picblast.data.models.PixyAlbum;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by kaushald on 15/11/17.
@@ -60,7 +61,7 @@ class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
         notifyDataSetChanged();
     }
 
-    public void reset(){
+    public void reset() {
         this.albums.clear();
         notifyDataSetChanged();
     }
@@ -90,7 +91,7 @@ class AlbumsAdapter extends RecyclerView.Adapter<AlbumsAdapter.AlbumVH> {
                     .getImagesCount(), pixyAlbum.getProvider());
             tvAlbumInfo.setText(albumInfo);
 
-            tvUploaderInfo.setText(pixyAlbum.getAccountUrl());
+            tvUploaderInfo.setText(String.format(Locale.US, "Views: %d", pixyAlbum.getViews()));
 
             itemView.setOnClickListener(v -> mListener.onAlbumClicked(pixyAlbum));
         }
