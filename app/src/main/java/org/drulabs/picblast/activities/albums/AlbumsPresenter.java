@@ -18,6 +18,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subscribers.TestSubscriber;
 
 /**
  * Created by kaushald on 16/11/17.
@@ -34,10 +35,9 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
     @Inject
     AlbumsPresenter(AlbumsContract.View view, DataHandler dataHandler) {
         this.mView = view;
-        DataHandler mDataHandler = dataHandler;
         this.compositeDisposables = new CompositeDisposable();
-        this.albumObservable = mDataHandler.fetchAlbums();
-        this.searchObservable = mDataHandler.fetchAlbums("");
+        this.albumObservable = dataHandler.fetchAlbums();
+        this.searchObservable = dataHandler.fetchAlbums("");
     }
 
     @Override
@@ -86,7 +86,7 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
 
     @Override
     public void filterAlbums(String searchText) {
-
+        
         Disposable d = searchObservable.subscribeOn(Schedulers.io())
                 .doOnError(Throwable::printStackTrace)
                 .doOnComplete(() -> searchObservable.unsubscribeOn(Schedulers.io()))

@@ -2,7 +2,6 @@ package org.drulabs.picblast.data;
 
 import android.content.Context;
 
-import org.drulabs.picblast.data.models.ImgurAlbum;
 import org.drulabs.picblast.data.models.ImgurAlbumDetails;
 import org.drulabs.picblast.data.models.ImgurPic;
 import org.drulabs.picblast.data.models.ImgurResp;
@@ -105,33 +104,19 @@ public class AppDataHandler implements DataHandler {
             Observable<ImgurUserAlbums> imgurAlbumsObservable = mImgurApi.fetchUserAlbums
                     (authHeader, "me");
             return imgurAlbumsObservable
-                    .map(ImgurUserAlbums::getAlbumList)
-                    .compose(upstream -> upstream.subscribeOn(Schedulers.io())
-                            .map(imgurAlbums -> {
-                                List<PixyAlbum> pixyAlbums = new ArrayList<>();
-                                Collections.sort(imgurAlbums);
-                                for (ImgurAlbum singleImgurAlbum : imgurAlbums) {
-                                    PixyAlbum soloPixyAlbum = ModelAdapter.from(singleImgurAlbum);
-                                    pixyAlbums.add(soloPixyAlbum);
-                                    mAlbumBox.query().equal(PixyAlbum_.id, singleImgurAlbum.getId())
-                                            .build().remove();
-                                }
-
-                                mAlbumBox.put(pixyAlbums);
-
-                                return pixyAlbums;
-                            }).doOnError(Throwable::printStackTrace)
-                    );
+                    .flatMap(imgurUserAlbums -> Observable.fromIterable(imgurUserAlbums.getAlbumList()))
+                    .map(imgurAlbum -> {
+                        PixyAlbum pixyAlbum = ModelAdapter.from(imgurAlbum);
+                        mAlbumBox.query().equal(PixyAlbum_.id, imgurAlbum.getId()).build()
+                                .remove();
+                        mAlbumBox.put(pixyAlbum);
+                        return pixyAlbum;
+                    }).buffer(Constants.ALBUM_FETCH_SIZE);
         } else {
             return Observable.create(subscriber -> {
-                try {
-                    List<PixyAlbum> pixyAlbums = mAlbumBox.query().build().find(); // add pagination here if required
-                    subscriber.onNext(pixyAlbums);
-                    subscriber.onComplete();
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                    subscriber.onError(e1);
-                }
+                List<PixyAlbum> pixyAlbums = mAlbumBox.query().build().find(); // add pagination here if required
+                subscriber.onNext(pixyAlbums);
+                subscriber.onComplete();
             });
         }
     }

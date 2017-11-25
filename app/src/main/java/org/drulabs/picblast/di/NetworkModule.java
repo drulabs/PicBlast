@@ -18,7 +18,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @Module
 public class NetworkModule {
 
-    public static final String CLIENT_ID = "03a49260c93c54f";
+    public static final String CLIENT_ID = "YOUR IMGUR APP CLIENT ID";
 
     private String mBaseURL;
 

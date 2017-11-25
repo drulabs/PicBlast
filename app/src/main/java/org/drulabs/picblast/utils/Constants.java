@@ -8,4 +8,5 @@ public interface Constants {
 
     String PROVIDER_IMGUR = "imgur.com";
 
+    int ALBUM_FETCH_SIZE = 20;
 }
