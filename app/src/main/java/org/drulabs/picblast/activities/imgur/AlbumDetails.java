@@ -3,10 +3,8 @@ package org.drulabs.picblast.activities.imgur;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.view.ViewCompat;
@@ -216,5 +214,8 @@ public class AlbumDetails extends AppCompatActivity implements AlbumDetailsContr
     @Override
     public void onPicClicked(PixyPic pic) {
         mPresenter.onImageClicked(pic);
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setData(Uri.parse(pic.getProviderUrl()));
+        startActivity(i);
     }
 }

@@ -18,7 +18,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subscribers.TestSubscriber;
 
 /**
  * Created by kaushald on 16/11/17.
@@ -50,49 +49,28 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
                                HashMap<String, String> extras) {
 
         mView.showLoading(null);
-        compositeDisposables.add(albumObservable.subscribeOn(Schedulers.io())
+        compositeDisposables.add(
+                albumObservable.subscribeOn(Schedulers.io())
                 .doOnError(Throwable::printStackTrace)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(pixyAlbums -> {
                     mView.onAlbumsFetched(pixyAlbums);
                     mView.hideLoading();
-                })
-                .subscribe()
-        );
-
-        compositeDisposables.add(
-                searchObservable.subscribeOn(Schedulers.io())
-                        .doOnError(Throwable::printStackTrace)
-                        .doOnComplete(() -> searchObservable.unsubscribeOn(Schedulers.io()))
-                        .map(pixyAlbum -> {
-                            PixyStatsHolder statsHolder = new PixyStatsHolder();
-                            statsHolder.setAlbumId(pixyAlbum.getId());
-                            statsHolder.setImageCount(pixyAlbum.getImagesCount());
-                            statsHolder.setViews(pixyAlbum.getViews());
-                            return statsHolder;
-                        })
-                        .reduce((stats1, stats2) -> {
-                            PixyStatsHolder statsHolder = new PixyStatsHolder();
-                            statsHolder.setAlbumId(stats1.getAlbumId());
-                            statsHolder.setViews(stats1.getViews() + stats2.getViews());
-                            statsHolder.setImageCount(stats1.getImageCount() +
-                                    stats2.getImageCount());
-                            return statsHolder;
-                        })
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(stats -> mView.updateStats(stats))
+                }).flatMap(Observable::fromIterable)
+                .compose(this::applyMapReduce)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(stats -> mView.updateStats(stats))
         );
     }
 
     @Override
     public void filterAlbums(String searchText) {
-        
+
         Disposable d = searchObservable.subscribeOn(Schedulers.io())
                 .doOnError(Throwable::printStackTrace)
                 .doOnComplete(() -> searchObservable.unsubscribeOn(Schedulers.io()))
                 .filter(pixyAlbum -> {
-                    Log.d("FilterAlbum", "Filtering: main thread: " + (Looper.myLooper() ==
-                            Looper.getMainLooper()));
+                    Log.d("FilterAlbum", "Filtering: " + Thread.currentThread().getName());
                     return pixyAlbum.getTitle().contains(searchText) ||
                             pixyAlbum.getDescription().contains(searchText) ||
                             pixyAlbum.getProvider().contains(searchText);
@@ -100,15 +78,22 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(pixyAlbum -> {
                     mView.onAlbumUpdated(pixyAlbum);
-                    Log.d("FilterAlbum", "UpdateAlbum: main thread: " + (Looper.myLooper() ==
-                            Looper.getMainLooper()));
+                    Log.d("FilterAlbum", "UpdateAlbum: " + Thread.currentThread().getName());
                 })
-                .observeOn(Schedulers.computation())
+                .compose(this::applyMapReduce)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(stats -> {
+                    Log.d("FilterAlbum", "UpdateStats: " + Thread.currentThread().getName());
+                    mView.updateStats(stats);
+                });
+        compositeDisposables.add(d);
+
+    }
+
+    private Observable<PixyStatsHolder> applyMapReduce(Observable<PixyAlbum> pixyAlbumObservable) {
+        return pixyAlbumObservable.observeOn(Schedulers.computation())
                 .map(pixyAlbum -> {
-
-                    Log.d("FilterAlbum", "Mapping: main thread: " + (Looper.myLooper() ==
-                            Looper.getMainLooper()));
-
+                    Log.d("FilterAlbum", "MapReduce: " + Thread.currentThread().getName());
                     PixyStatsHolder statsHolder = new PixyStatsHolder();
                     statsHolder.setAlbumId(pixyAlbum.getId());
                     statsHolder.setImageCount(pixyAlbum.getImagesCount());
@@ -120,19 +105,8 @@ public class AlbumsPresenter implements AlbumsContract.Presenter {
                     statsHolder.setViews(stats1.getViews() + stats2.getViews());
                     statsHolder.setImageCount(stats1.getImageCount() +
                             stats2.getImageCount());
-
-                    Log.d("FilterAlbum", "Reducing: main thread: " + (Looper.myLooper() ==
-                            Looper.getMainLooper()));
-
                     return statsHolder;
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(stats -> {
-                    Log.d("FilterAlbum", "UpdateStats: main thread: " + (Looper.myLooper() ==
-                            Looper.getMainLooper()));
-                    mView.updateStats(stats);
-                });
-        compositeDisposables.add(d);
-
+                }).toObservable();
     }
 
     @Override
